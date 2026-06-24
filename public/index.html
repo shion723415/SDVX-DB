@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDVX 성과표</title>
+    <style>
+        body { background-color: #1e1e2f; color: #fff; font-family: sans-serif; padding: 20px; margin: 0; }
+        
+        /*  새로 추가된 헤더 및 로그인 UI 디자인 (다크 테마 맞춤) */
+        .header-panel { display: flex; justify-content: space-between; align-items: center; background: #2a2a40; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .header-panel h1 { margin: 0; font-size: 1.5em; }
+        .auth-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: background 0.2s; border: 1px solid #444; background: #1e1e2f; }
+        .auth-profile:hover { background: #3a3a55; border-color: #5a52ff; }
+        .auth-profile img { border-radius: 50%; }
+        .btn-login { background: #5865F2; color: white; padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9em; }
+        .btn-login:hover { background: #4752C4; }
+
+        /* 기존 CSS 그대로 유지 */
+        .filter-panel, .level-panel { background: #2a2a40; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        .filter-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        input[type="text"] { padding: 8px; width: 300px; background: #1e1e2f; color: #fff; border: 1px solid #555; border-radius: 4px; }
+        button { padding: 8px 14px; background: #5a52ff; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #7a72ff; }
+
+        .recommendation-panel { background: #3a1c1c; color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #e74c3c; }
+        .rec-header { display: flex; justify-content: space-between; align-items: center; }
+        .rec-text { font-size: 1.1em; }
+        .rec-highlight { color: #e74c3c; font-size: 1.3em; font-weight: bold; margin: 0 5px; }
+        .rec-subtext { color: #ff9999; font-size: 0.85em; margin-left: 10px; }
+        
+        .btn-rec { background: #e74c3c; color: #fff; }
+        .btn-rec:hover { background: #c0392b; }
+        .btn-random { background: #f39c12; color: #fff; margin-right: 10px; }
+        .btn-random:hover { background: #e67e22; }
+
+        .random-pick-box { margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.25); border-radius: 8px; display: none; align-items: center; justify-content: space-between; border: 1px solid #555; }
+        .random-song-info { display: flex; align-items: center; gap: 15px; }
+        .random-song-icon { font-size: 2em; }
+        .random-song-details { display: flex; flex-direction: column; gap: 5px; }
+        .random-song-title { font-size: 1.2em; font-weight: bold; }
+        .random-song-desc { font-size: 0.9em; color: #ccc; }
+
+        .level-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .level-panel-title { font-weight: bold; }
+        .level-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px 10px; margin-bottom: 10px; }
+        .level-checkbox { display: flex; align-items: center; gap: 4px; font-size: 0.9em; }
+        .level-checkbox input, .level-checkbox label { cursor: pointer; }
+        .level-group-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+        .level-group-actions a { color: #7ab8ff; text-decoration: underline; cursor: pointer; font-size: 0.9em; }
+
+        .stats-panel { background: #e0e6ed; color: #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; }
+        .stats-header { display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-bottom: 10px; }
+        .stats-header div { background: #fff; margin: 0 5px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        .stats-header .stat-value { font-size: 1.4em; color: #111; margin-top: 5px; }
+        
+        .medal-table { width: 100%; text-align: center; border-collapse: collapse; background: #fff; border: 1px solid #ccc; font-size: 0.85em; }
+        .medal-table th, .medal-table td { border: 1px solid #ccc; padding: 5px; }
+        .medal-table th { color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); }
+        .medal-table td { font-size: 1.1em; color: #111; }
+        .perc-text { font-size: 0.8em; color: #666; font-weight: normal; }
+
+        .bg-puc { background-color: #f1c40f; } .bg-uc { background-color: #ff6b81; }
+        .bg-mxv { background-color: #bdc3c7; } .bg-exc { background-color: #e67e22; }
+        .bg-comp { background-color: #2ecc71; } .bg-crash { background-color: #34495e; }
+        .bg-noplay { background-color: #7f8c8d; }
+
+        .medal-bar-container { width: 100%; height: 12px; background: #ccc; border-radius: 6px; margin-top: 10px; display: flex; overflow: hidden; }
+        .medal-bar-segment { height: 100%; transition: width 0.3s ease; }
+
+        table.score-list { width: 100%; border-collapse: collapse; background-color: #2a2a40; }
+        table.score-list th, table.score-list td { border: 1px solid #444; padding: 10px; text-align: center; vertical-align: middle; }
+        .th-title  { text-align: left !important; padding-left: 15px !important; }
+        .song-title { text-align: left; padding-left: 15px; font-size: 1.1em; font-weight: bold; }
+        
+        .diff-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; display: inline-block; width: 45px; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); }
+        .diff-nov { background: #5a52ff; } .diff-adv { background: #f1c40f; color: #000; text-shadow: none; } 
+        .diff-exh { background: #e74c3c; } .diff-mxm { background: #95a5a6; color: #000; text-shadow: none; } 
+        .diff-inf { background: #e056fd; } .diff-grv { background: #e67e22; } 
+        .diff-hvn { background: #00a8ff; } .diff-vvd { background: #ff9ff3; color: #000; text-shadow: none; } 
+        .diff-xcd { background: #0984e3; } .diff-nbl { background: #c2b280; color: #000; text-shadow: none; } 
+        .diff-ult { background: #f39c12; }
+        
+        .medal-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; display: inline-block; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
+        .score-num { font-size: 1.2em; font-weight: bold; font-family: monospace; }
+        .rank-text { font-size: 0.85em; font-weight: bold; margin-top: 2px; }
+        .rank-s { color: #f1c40f; font-style: italic; font-size: 1em; } 
+        .vf-num { font-size: 1.3em; font-weight: bold; color: #a5d2ff; }
+        .no-play-text { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="header-panel">
+        <h1> SDVX 성과 데이터베이스</h1>
+        <div id="auth-area">
+            <span style="color: #888;">로그인 상태 확인 중...</span>
+        </div>
+    </div>
+
+    <div class="filter-panel">
+        <div class="filter-group">
+            <label>곡 이름: <input type="text" id="searchInput" placeholder="검색..."></label>
+            <button id="filterBtn">검색</button>
+        </div>
+    </div>
+
+    <div class="recommendation-panel" id="recommendationPanel" style="display: none; flex-direction: column; align-items: stretch;">
+        <div class="rec-header">
+            <div class="rec-text">
+                추천 레벨 : <span class="rec-highlight" id="recLevelText">Lv.0</span>
+                <span class="rec-subtext" id="recSubText">(계산 중...)</span>
+            </div>
+            <div>
+                <button class="btn-random" id="randomPickBtn">🎲 타겟 레벨 랜덤 뽑기</button>
+                <button class="btn-rec" id="applyRecBtn">목록 전체 보기</button>
+            </div>
+        </div>
+        <div class="random-pick-box" id="randomPickBox"></div>
+    </div>
+
+    <div class="level-panel">
+        <div class="level-panel-header">
+            <span class="level-panel-title">레벨 지정</span>
+            <button id="toggleAllLevelsBtn">일괄 체크/해제</button>
+        </div>
+        <div class="level-grid" id="levelGrid"></div>
+        <div class="level-group-actions" id="levelGroupActions"></div>
+    </div>
+
+    <div class="stats-panel" id="statsPanel" style="display: none;">
+        <div class="stats-header">
+            <div>표시 중인 트랙 수<div class="stat-value" id="statTrackCount">0</div></div>
+            <div>표시 중인 트랙의 평균 스코어<div class="stat-value" id="statAvgScore">0</div></div>
+        </div>
+        <table class="medal-table">
+            <thead>
+                <tr>
+                    <th class="bg-puc">PUC</th><th class="bg-uc">UC</th><th class="bg-mxv">MXV COMP</th>
+                    <th class="bg-exc">EX COMP</th><th class="bg-comp">COMP</th><th class="bg-crash">CRASH</th>
+                    <th class="bg-noplay">NO PLAY</th>
+                </tr>
+            </thead>
+            <tbody><tr id="statMedalRow"></tr></tbody>
+        </table>
+        <div class="medal-bar-container" id="medalProgressBar"></div>
+    </div>
+
+    <table class="score-list">
+        <thead>
+            <tr>
+                <th class="th-title">곡 이름</th>
+                <th style="width: 80px;">패턴</th>
+                <th style="width: 70px;">레벨</th>
+                <th style="width: 140px;">점수 (랭크)</th>
+                <th style="width: 120px;">클리어 메달</th>
+                <th style="width: 100px;">볼포스 (VF)</th>
+            </tr>
+        </thead>
+        <tbody id="scoreTableBody">
+            <tr><td colspan="6">데이터를 불러오는 중입니다...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        //  로그인 상태 확인 로직
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                const authArea = document.getElementById('auth-area');
+
+                if (data.loggedIn) {
+                    const avatarUrl = data.user.avatar 
+                        ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+                        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+                    // 로그인 성공 시 우측 상단에 내 프사와 닉네임 표시 (클릭하면 마이페이지로 이동)
+                    authArea.innerHTML = `
+                        <div class="auth-profile" onclick="location.href='/mypage.html'" title="마이페이지(갱신 코드 발급)로 이동">
+                            <img src="${avatarUrl}" width="32" height="32" />
+                            <span><strong>${escapeHtml(data.user.username)}</strong> 님</span>
+                        </div>
+                    `;
+                } else {
+                    // 비로그인 시 로그인 버튼 표시
+                    authArea.innerHTML = `
+                        <button class="btn-login" onclick="location.href='/auth/discord'">디스코드 로그인</button>
+                    `;
+                }
+            } catch (e) {
+                console.error('로그인 상태 확인 실패:', e);
+                document.getElementById('auth-area').innerHTML = `<span style="color:#e74c3c;">서버 연결 오류</span>`;
+            }
+        }
+
+        // 기존 자바스크립트 로직 완벽 보존
+        const DB_TO_DISPLAY_MAP = {
+            novice: 'NOV', advanced: 'ADV', exhaust: 'EXH', maximum: 'MXM',
+            infinite: 'INF', gravity: 'GRV', heavenly: 'HVN', vivid: 'VVD',
+            exceed: 'XCD', nabla: 'NBL', ultimate: 'ULT',
+        };
+
+        const DISPLAY_TO_SCORE_MAP = {
+            NOV: 'NOV', ADV: 'ADV', EXH: 'EXH', MXM: 'MXM',
+            INF: 'INF', GRV: 'INF', HVN: 'INF', VVD: 'INF', 
+            XCD: 'INF', NBL: 'INF', ULT: 'ULT'
+        };
+
+        let allCharts = []; 
+
+        function buildLevelList() {
+            const levels = [];
+            for (let i = 1; i <= 17; i++) levels.push(i);
+            levels.push(17.5);
+            for (let whole = 18; whole <= 20; whole++) {
+                for (let d = 0; d <= 9; d++) levels.push(parseFloat((whole + d / 10).toFixed(1)));
+            }
+            return levels;
+        }
+        const LEVEL_LIST = buildLevelList();
+        let checkedLevels = new Set(LEVEL_LIST);
+
+        function levelToId(lv) { return `lv_${String(lv).replace('.', '_')}`; }
+
+        function renderLevelGrid() {
+            const grid = document.getElementById('levelGrid');
+            grid.innerHTML = LEVEL_LIST.map(lv => {
+                const id = levelToId(lv);
+                const label = Number.isInteger(lv) ? lv : lv.toFixed(1);
+                return `<div class="level-checkbox"><input type="checkbox" id="${id}" data-level="${lv}" checked><label for="${id}">${label}</label></div>`;
+            }).join('');
+            grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const lv = parseFloat(cb.dataset.level);
+                    if (cb.checked) checkedLevels.add(lv); else checkedLevels.delete(lv);
+                    applyFilters();
+                });
+            });
+        }
+
+        function renderLevelGroupActions() {
+            const container = document.getElementById('levelGroupActions');
+            const groups = [18, 19, 20];
+            container.innerHTML = groups.map(g => `<span><a data-group="${g}" data-action="select">Lv${g} 전체선택</a> / <a data-group="${g}" data-action="deselect">해제</a></span>`).join('');
+            container.querySelectorAll('a').forEach(a => {
+                a.addEventListener('click', () => {
+                    const g = parseFloat(a.dataset.group);
+                    const select = a.dataset.action === 'select';
+                    LEVEL_LIST.filter(lv => Math.floor(lv) === g).forEach(lv => {
+                        const cb = document.getElementById(levelToId(lv));
+                        if (cb) cb.checked = select;
+                        if (select) checkedLevels.add(lv); else checkedLevels.delete(lv);
+                    });
+                    applyFilters();
+                });
+            });
+        }
+
+        function setupToggleAllButton() {
+            document.getElementById('toggleAllLevelsBtn').addEventListener('click', () => {
+                const allChecked = checkedLevels.size === LEVEL_LIST.length;
+                document.querySelectorAll('#levelGrid input[type="checkbox"]').forEach(cb => cb.checked = !allChecked);
+                checkedLevels = allChecked ? new Set() : new Set(LEVEL_LIST);
+                applyFilters();
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function getRankInfo(score) {
+            if (score >= 9900000) return { rank: 'S', factor: 1.05 };
+            if (score >= 9800000) return { rank: 'AAA+', factor: 1.02 };
+            if (score >= 9700000) return { rank: 'AAA', factor: 1.0 };
+            if (score >= 9500000) return { rank: 'AA+', factor: 0.97 };
+            if (score >= 9300000) return { rank: 'AA', factor: 0.94 };
+            if (score >= 9000000) return { rank: 'A+', factor: 0.91 };
+            if (score >= 8700000) return { rank: 'A', factor: 0.88 };
+            if (score >= 8000000) return { rank: 'B', factor: 0.85 };
+            if (score >= 7000000) return { rank: 'C', factor: 0.82 };
+            return { rank: 'D', factor: 0.8 };
+        }
+
+        function getMedalFactor(medal) {
+            if (medal === 'PUC') return 1.1;
+            if (medal === 'UC') return 1.06;
+            if (medal === 'MAXXIVE') return 1.04; 
+            if (medal === 'EXC') return 1.02;     
+            if (medal === 'CLEAR') return 1.0;    
+            if (medal === 'CRASH') return 0.5;    
+            return 0; 
+        }
+
+        function calculateVolforce(level, score, medal) {
+            if (!score || score === 0 || !medal || medal === 'NO PLAY') return 0;
+            const rawVf = Math.floor(level * 20 * (score / 10000000) * getMedalFactor(medal) * getRankInfo(score).factor);
+            return rawVf / 10; 
+        }
+
+        function renderRecommendation() {
+            const playedCharts = allCharts.filter(c => c.score > 0).sort((a, b) => b.vf - a.vf);
+            if (playedCharts.length === 0) return;
+
+            const top200 = playedCharts.slice(0, 200);
+            const top50 = playedCharts.slice(0, 50);
+            
+            const minLevel = Math.min(...top200.map(c => c.level));
+            const maxLevel = top50.length > 0 ? Math.max(...top50.map(c => c.level)) : Math.max(...top200.map(c => c.level));
+
+            const levelStats = {};
+            playedCharts.forEach(c => {
+                if (!levelStats[c.level]) levelStats[c.level] = { sum: 0, count: 0 };
+                levelStats[c.level].sum += c.score;
+                levelStats[c.level].count++;
+            });
+
+            const avgByLevel = [];
+            for (const [lvl, data] of Object.entries(levelStats)) {
+                avgByLevel.push({
+                    level: parseFloat(lvl),
+                    avgScore: data.sum / data.count,
+                    count: data.count
+                });
+            }
+            avgByLevel.sort((a, b) => a.level - b.level);
+
+            if (avgByLevel.length < 2) return;
+
+            let maxDrop = -Infinity;
+            let targetLevel = null;
+            let dropAmount = 0;
+            let prevLevelForText = 0;
+
+            for (let i = 1; i < avgByLevel.length; i++) {
+                const prev = avgByLevel[i - 1];
+                const curr = avgByLevel[i];
+                
+                if (curr.level < minLevel || curr.level > maxLevel) continue;
+
+                const drop = prev.avgScore - curr.avgScore;
+                
+                if (curr.count >= 2 || avgByLevel.length < 5) {
+                    if (drop > maxDrop) {
+                        maxDrop = drop;
+                        targetLevel = curr.level;
+                        dropAmount = drop;
+                        prevLevelForText = prev.level;
+                    }
+                }
+            }
+
+            if (!targetLevel) targetLevel = maxLevel;
+
+            if (targetLevel) {
+                document.getElementById('recommendationPanel').style.display = 'flex';
+                document.getElementById('recLevelText').textContent = `Lv.${targetLevel}`;
+                
+                let subText = `(Lv.${prevLevelForText} 대비 평균 점수 하락 구간 / 탐색: Lv.${minLevel} ~ ${maxLevel})`;
+                if (dropAmount > 0) {
+                    subText = `(Lv.${prevLevelForText} 대비 평균 점수 ${Math.floor(dropAmount).toLocaleString()}점 급락 / 탐색: Lv.${minLevel} ~ ${maxLevel})`;
+                }
+                document.getElementById('recSubText').textContent = subText;
+                
+                const targetStat = avgByLevel.find(a => a.level === targetLevel);
+                const targetAvgScore = targetStat ? targetStat.avgScore : 0;
+
+                document.getElementById('randomPickBtn').onclick = () => {
+                    const targetCharts = allCharts.filter(c => c.level === targetLevel);
+                    let candidates = targetCharts.filter(c => c.score < targetAvgScore);
+                    
+                    if (candidates.length === 0) candidates = targetCharts;
+
+                    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                    
+                    const box = document.getElementById('randomPickBox');
+                    box.style.display = 'flex';
+                    
+                    const diffBadge = `<span class="diff-badge diff-${pick.difficulty.toLowerCase()}">${pick.difficulty}</span>`;
+                    const scoreText = pick.score > 0 ? pick.score.toLocaleString() : "NO PLAY";
+                    const isNoPlay = pick.score === 0 ? "이 곡은 아직 플레이하지 않았습니다!" : `(해당 레벨 평균 ${Math.floor(targetAvgScore).toLocaleString()}점 미만)`;
+                    
+                    box.innerHTML = `
+                        <div class="random-song-info">
+                            <div class="random-song-icon">🎧</div>
+                            <div class="random-song-details">
+                                <div class="random-song-title">${escapeHtml(pick.title)}</div>
+                                <div class="random-song-desc">
+                                    ${diffBadge} Lv.${pick.level} | 내 점수: <strong>${scoreText}</strong> <span style="color:#ff9999;">${isNoPlay}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="searchThisSongBtn" class="btn-rec" style="background: #9b59b6; border-color: #8e44ad;">이 곡 검색하기</button>
+                    `;
+
+                    document.getElementById('searchThisSongBtn').onclick = () => {
+                        document.getElementById('searchInput').value = pick.title;
+                        applyFilters();
+                    };
+                };
+
+                document.getElementById('applyRecBtn').onclick = () => {
+                    document.querySelectorAll('#levelGrid input[type="checkbox"]').forEach(cb => {
+                        cb.checked = (parseFloat(cb.dataset.level) === targetLevel);
+                    });
+                    checkedLevels.clear();
+                    checkedLevels.add(targetLevel);
+                    document.getElementById('searchInput').value = '';
+                    applyFilters();
+                };
+            }
+        }
+
+        async function init() {
+            try {
+                // 기존 통신 로직이 이미 완벽하게 서버와 규격이 맞으므로 수정 없이 바로 작동합니다!
+                const [scoresRes, musicRes] = await Promise.all([ fetch('/api/scores'), fetch('/api/music') ]);
+                const userScores = await scoresRes.json();
+                const musicDB    = await musicRes.json();
+
+                const myScoreMap = {};
+                userScores.forEach(s => {
+                    myScoreMap[`${s.songTitle}_${s.difficulty?.toUpperCase()}`] = s;
+                });
+
+                allCharts = [];
+                musicDB.forEach(music => {
+                    music.sheets.forEach(s => {
+                        const displayDiff = DB_TO_DISPLAY_MAP[s.difficulty?.toLowerCase()];
+                        if (!displayDiff) return;
+                        const level = parseFloat(s.level);
+                        if (isNaN(level)) return;
+
+                        const lookupKey = DISPLAY_TO_SCORE_MAP[displayDiff];
+                        const record = myScoreMap[`${music.title}_${lookupKey}`];
+                        
+                        const score = record ? record.score : 0;
+                        const medal = record ? record.clearMedal : 'NO PLAY';
+                        const rankInfo = score > 0 ? getRankInfo(score) : { rank: '-' };
+                        const vf = calculateVolforce(level, score, medal);
+
+                        allCharts.push({
+                            title: music.title, difficulty: displayDiff, level: level,
+                            score: score, medal: medal, rank: rankInfo.rank, vf: vf
+                        });
+                    });
+                });
+
+                renderRecommendation();
+                applyFilters();
+            } catch (err) {
+                document.getElementById('scoreTableBody').innerHTML = `<tr><td colspan="6" style="padding: 30px;">데이터 로드 실패: ${err.message}</td></tr>`;
+            }
+        }
+
+        function applyFilters() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const allChecked = checkedLevels.size === LEVEL_LIST.length;
+
+            let filtered = allCharts.filter(c => {
+                const matchKeyword = c.title.toLowerCase().includes(keyword);
+                const matchLevel = allChecked || checkedLevels.has(c.level);
+                return matchKeyword && matchLevel;
+            });
+
+            filtered.sort((a, b) => b.vf - a.vf || b.score - a.score || b.level - a.level);
+
+            renderStats(filtered);
+            renderTable(filtered);
+        }
+
+        function renderStats(filtered) {
+            document.getElementById('statsPanel').style.display = 'block';
+
+            let totalTracks = filtered.length;
+            let playedCount = 0; let sumScore = 0;
+            const medals = { PUC: 0, UC: 0, MAXXIVE: 0, EXC: 0, CLEAR: 0, CRASH: 0, NOPLAY: 0 };
+
+            filtered.forEach(c => {
+                if (c.score > 0) { playedCount++; sumScore += c.score; }
+                if (c.medal === 'PUC') medals.PUC++;
+                else if (c.medal === 'UC') medals.UC++;
+                else if (c.medal === 'MAXXIVE') medals.MAXXIVE++;
+                else if (c.medal === 'EXC') medals.EXC++;
+                else if (c.medal === 'CLEAR') medals.CLEAR++;
+                else if (c.medal === 'CRASH') medals.CRASH++;
+                else medals.NOPLAY++;
+            });
+
+            const avgScore = playedCount > 0 ? Math.floor(sumScore / playedCount) : 0;
+            
+            document.getElementById('statTrackCount').textContent = totalTracks.toLocaleString();
+            document.getElementById('statAvgScore').textContent = avgScore.toLocaleString();
+
+            const getPerc = (count) => totalTracks > 0 ? ((count / totalTracks) * 100).toFixed(1) : "0.0";
+
+            document.getElementById('statMedalRow').innerHTML = `
+                <td>${medals.PUC}<br><span class="perc-text">(${getPerc(medals.PUC)}%)</span></td>
+                <td>${medals.UC}<br><span class="perc-text">(${getPerc(medals.UC)}%)</span></td>
+                <td>${medals.MAXXIVE}<br><span class="perc-text">(${getPerc(medals.MAXXIVE)}%)</span></td>
+                <td>${medals.EXC}<br><span class="perc-text">(${getPerc(medals.EXC)}%)</span></td>
+                <td>${medals.CLEAR}<br><span class="perc-text">(${getPerc(medals.CLEAR)}%)</span></td>
+                <td>${medals.CRASH}<br><span class="perc-text">(${getPerc(medals.CRASH)}%)</span></td>
+                <td>${medals.NOPLAY}<br><span class="perc-text">(${getPerc(medals.NOPLAY)}%)</span></td>
+            `;
+
+            const barHtml = [
+                { class: 'bg-puc', count: medals.PUC }, { class: 'bg-uc', count: medals.UC },
+                { class: 'bg-mxv', count: medals.MAXXIVE }, { class: 'bg-exc', count: medals.EXC },
+                { class: 'bg-comp', count: medals.CLEAR }, { class: 'bg-crash', count: medals.CRASH },
+                { class: 'bg-noplay', count: medals.NOPLAY }
+            ].map(m => m.count > 0 ? `<div class="medal-bar-segment ${m.class}" style="width: ${getPerc(m.count)}%"></div>` : '').join('');
+            
+            document.getElementById('medalProgressBar').innerHTML = barHtml;
+        }
+
+        function renderTable(filtered) {
+            let html = '';
+            filtered.forEach(c => {
+                const diffBadge = `<span class="diff-badge diff-${c.difficulty.toLowerCase()}">${c.difficulty}</span>`;
+                
+                let medalBadge = '';
+                if (c.medal === 'PUC') medalBadge = `<span class="medal-badge bg-puc">PUC</span>`;
+                else if (c.medal === 'UC') medalBadge = `<span class="medal-badge bg-uc">UC</span>`;
+                else if (c.medal === 'MAXXIVE') medalBadge = `<span class="medal-badge bg-mxv">MXV COMP</span>`;
+                else if (c.medal === 'EXC') medalBadge = `<span class="medal-badge bg-exc">EX COMP</span>`;
+                else if (c.medal === 'CLEAR') medalBadge = `<span class="medal-badge bg-comp">COMP</span>`;
+                else if (c.medal === 'CRASH') medalBadge = `<span class="medal-badge bg-crash">CRASH</span>`;
+                else medalBadge = `<span class="no-play-text">NO PLAY</span>`;
+
+                const rankClass = c.rank === 'S' ? 'rank-s' : '';
+                const scoreText = c.score > 0 
+                    ? `<div class="score-num">${c.score.toLocaleString()}</div><div class="rank-text ${rankClass}">${c.rank}</div>` 
+                    : `<span class="no-play-text">-</span>`;
+
+                const vfText = c.vf > 0 ? `<span class="vf-num">${c.vf.toFixed(1)}</span>` : `<span class="no-play-text">-</span>`;
+
+                html += `
+                    <tr>
+                        <td class="song-title">${escapeHtml(c.title)}</td>
+                        <td>${diffBadge}</td>
+                        <td>Lv.${c.level}</td>
+                        <td>${scoreText}</td>
+                        <td>${medalBadge}</td>
+                        <td>${vfText}</td>
+                    </tr>
+                `;
+            });
+
+            if (filtered.length === 0) html = '<tr><td colspan="6" style="padding: 30px;">조건에 맞는 곡이 없습니다.</td></tr>';
+            document.getElementById('scoreTableBody').innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus(); //  추가: 켜지자마자 로그인 상태 확인!
+            renderLevelGrid(); renderLevelGroupActions(); setupToggleAllButton();
+            document.getElementById('filterBtn').addEventListener('click', applyFilters);
+            document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+            init();
+        });
+    </script>
+</body>
+</html>

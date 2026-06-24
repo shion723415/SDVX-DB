@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지 & 갱신 코드 확인</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto 20px; }
+        .profile { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .profile img { border-radius: 50%; }
+        textarea { width: 100%; height: 120px; font-family: monospace; font-size: 12px; background: #222; color: #fff; padding: 10px; border-radius: 4px; box-sizing: border-box; resize: none; }
+        button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .back-btn { background: #6c757d; margin-right: 10px; }
+        .back-btn:hover { background: #5a6268; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>👤 내 프로필 정보</h2>
+        <div class="profile" id="user-info">
+            <p>로딩 중...</p>
+        </div>
+        <button class="back-btn" onclick="location.href='/'">← 메인 화면으로</button>
+        <button onclick="location.href='/auth/logout'" style="background:#dc3545;">로그아웃</button>
+    </div>
+
+    <div class="card">
+        <h2>🔑 나만의 맞춤형 기록 갱신 코드 (북마크릿)</h2>
+        <p>아래 박스 안의 코드를 복사하여 브라우저 북마크에 등록하세요. 코나미 SDVX 공식 홈페이지 성과 페이지에서 실행하면 <strong>내 계정</strong>으로 점수가 안전하게 동기화됩니다.</p>
+        <textarea id="bookmarklet-box" readonly onclick="this.select()"></textarea>
+        <br><br>
+        <button onclick="copyBookmarklet()">📋 코드 복사하기</button>
+    </div>
+
+    <div class="card" style="border: 1px solid #dc3545;">
+        <h2 style="color: #dc3545;">⚠️ 데이터 관리</h2>
+        <p>아래 버튼을 누르면 DB에 저장된 <strong>당신의 모든 성과 데이터</strong>가 영구 삭제됩니다.</p>
+        <button class="delete-btn" onclick="confirmDelete()">모든 기록 삭제하기</button>
+    </div>
+
+    <script>
+        async function confirmDelete() {
+            if (!confirm('정말 모든 기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다!')) return;
+
+            try {
+                const response = await fetch('/api/delete-scores', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    location.reload(); 
+                } else {
+                    alert('삭제 실패: ' + data.message);
+                }
+            } catch (e) {
+                alert('통신 오류가 발생했습니다.');
+            }
+        }
+        async function loadMyPage() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+
+                if (!data.loggedIn) {
+                    alert('로그인이 필요한 페이지입니다!');
+                    location.href = '/';
+                    return;
+                }
+
+                // 1. 유저 프로필 렌더링
+                const user = data.user;
+                const avatarUrl = user.avatar 
+                    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+                    : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+                document.getElementById('user-info').innerHTML = `
+                    <img src="${avatarUrl}" width="64" height="64" />
+                    <div>
+                        <h3 style="margin:0;">${user.username}</h3>
+                        <p style="margin:5px 0 0 0; color:#666; font-size:12px;">Discord ID: ${user.id}</p>
+                    </div>
+                `;
+
+                // 🌟 2. 회원님의 완벽한 수집 로직에 user.id를 동적으로 주입!
+                // SEND_TO 주소 끝에 ?userId=${user.id} 가 붙어서 내 전용 창고로 직행합니다.
+                const bookmarkletCode = `javascript:(function(){window.SDVX_USER_ID="${user.id}";var d=document;var e=d.createElement('script');e.src='http://localhost:3000/bookmarklet.js?t='+Date.now();d.getElementsByTagName('head')[0].appendChild(e);})();`;
+
+                document.getElementById('bookmarklet-box').value = bookmarkletCode;
+
+            } catch (e) {
+                console.error('페이지 로드 에러:', e);
+            }
+        }
+
+        function copyBookmarklet() {
+            const box = document.getElementById('bookmarklet-box');
+            box.select();
+            document.execCommand('copy');
+            alert('나만의 갱신 코드가 클립보드에 복사되었습니다! 브라우저 북마크를 이 코드로 변경해 주세요.');
+        }
+
+        window.addEventListener('DOMContentLoaded', loadMyPage);
+    </script>
+</body>
+</html>
