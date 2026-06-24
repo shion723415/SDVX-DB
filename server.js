@@ -31,7 +31,7 @@ passport.deserializeUser((obj, done) => done(null, obj));
 passport.use(new DiscordStrategy({
     clientID: process.env.DISCORD_CLIENT_ID,
     clientSecret: process.env.DISCORD_CLIENT_SECRET,
-    callbackURL: 'http://localhost:3000/auth/discord/callback',
+    callbackURL: 'https://saboldongari.onrender.com/auth/discord/callback',
     scope: ['identify']
 }, (accessToken, refreshToken, profile, done) => done(null, profile)));
 
