@@ -1,5 +1,5 @@
 (async function() {
-    //  북마크릿(인젝터)이 넘겨준 디스코드 ID를 가져옵니다.
+    // 북마크릿(인젝터)이 넘겨준 디스코드 ID를 가져옵니다.
     const userId = window.SDVX_USER_ID;
     if (!userId) {
         alert("유저 정보를 찾을 수 없습니다. 마이페이지에서 갱신 코드를 다시 발급받아주세요.");
@@ -8,8 +8,6 @@
 
     const BASE_URL = "https://p.eagate.573.jp/game/sdvx/vii/playdata/";
     const MUSIC_PATH = "musicdata/index.html";
-    // 내 디스코드 ID를 담아서 서버로 쏩니다
-    const SEND_TO = `http://localhost:3000/api/scores?userId=${userId}`; 
     
     const _sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min) + min);
@@ -26,6 +24,15 @@
     const infoSpan = document.getElementById("infoSpan");
 
     try {
+        // 🌟 1. 프로필 페이지에서 플레이어 고유 SV 아이디 먼저 발굴하기
+        infoSpan.innerText = "플레이어 고유 SV 아이디를 확인하는 중...";
+        const profileHTML = await fetchHTML(`${BASE_URL}profile/index.html`);
+        const svMatch = profileHTML.match(/SV-[0-9\-]+/);
+        const svId = svMatch ? svMatch[0] : "UNKNOWN";
+
+        // 🌟 2. 내 디스코드 ID와 SV 아이디를 담아서 렌더 서버로 쏩니다!
+        const SEND_TO = `https://sdvx-achievement.onrender.com/api/scores?userId=${userId}&svId=${svId}`; 
+
         infoSpan.innerText = "1페이지 분석 중...";
         const firstPageHTML = await fetchHTML(`${BASE_URL}${MUSIC_PATH}?page=1&sort=0`);
         const parser = new DOMParser();
