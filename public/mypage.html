@@ -84,7 +84,7 @@
 
                 // 🌟 2. 회원님의 완벽한 수집 로직에 user.id를 동적으로 주입!
                 // SEND_TO 주소 끝에 ?userId=${user.id} 가 붙어서 내 전용 창고로 직행합니다.
-                const bookmarkletCode = `javascript:(function(){window.SDVX_USER_ID="${user.id}";var d=document;var e=d.createElement('script');e.src='http://localhost:3000/bookmarklet.js?t='+Date.now();d.getElementsByTagName('head')[0].appendChild(e);})();`;
+                const bookmarkletCode = `javascript:(function(){window.SDVX_USER_ID="${user.id}";var d=document;var e=d.createElement('script');e.src=https://sdvx-achievement.onrender.com/bookmarklet.js?t='+Date.now();d.getElementsByTagName('head')[0].appendChild(e);})();`;
 
                 document.getElementById('bookmarklet-box').value = bookmarkletCode;
 
